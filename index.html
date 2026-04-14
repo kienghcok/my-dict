@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生字典查詢系統</title>
+    <style>
+        :root { --accent: #c0392b; --bg: #fdfdfd; --border: #eee; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", serif; max-width: 700px; margin: 0 auto; padding: 20px; background: #fff; line-height: 1.6; color: #333; }
+        .sticky-top { position: sticky; top: 0; background: #fff; padding: 15px 0; border-bottom: 2px solid var(--border); z-index: 10; }
+        input[type="text"] { width: 100%; padding: 12px; font-size: 1.2rem; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; }
+        input[type="text"]:focus { border-color: var(--accent); }
+        .options { margin-top: 12px; display: flex; gap: 15px; font-size: 0.9rem; color: #555; }
+        .result-item { margin: 25px 0; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+        .char-head { font-size: 2.8rem; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+        .reading-box { background: #fff; padding: 8px 15px; border-radius: 6px; border: 1px solid #f0f0f0; margin-bottom: 8px; }
+        .label { font-weight: bold; color: #7f8c8d; margin-right: 8px; font-size: 0.8rem; }
+        .phon-text { color: #2c3e50; font-weight: 500; }
+        .bopomofo { color: var(--accent); font-weight: bold; letter-spacing: 1px; }
+        .mean-text { white-space: pre-wrap; padding-top: 10px; border-top: 1px dashed var(--border); margin-top: 10px; font-size: 1.05rem; }
+        label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-top">
+    <input type="text" id="searchInput" placeholder="輸入單字查詢..." maxlength="1" oninput="doSearch()">
+    <div class="options">
+        顯示模式：
+        <label><input type="radio" name="displayMode" value="status" checked onchange="doSearch()"> 音韻地位</label>
+        <label><input type="radio" name="displayMode" value="bopomofo" onchange="doSearch()"> 注音符號</label>
+    </div>
+</div>
+
+<div id="results"></div>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+
+<script>
+// 辅助函数：转换内容
+const getPhonContent = (val, mode) => {
+    if (!val || val === '/' || val === 'nan' || val === 'None') return null;
+    if (mode === 'status') return `<span class="phon-text">${val}</span>`;
+    
+    // 检查 derivePhonology 是否存在
+    if (typeof derivePhonology === 'function') {
+        const bp = derivePhonology(val);
+        return `<span class="bopomofo">${bp}</span>`;
+    }
+    return `<span class="phon-text" style="color:gray">${val}(插件未載)</span>`;
+};
+
+function doSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    const mode = document.querySelector('input[name="displayMode"]:checked').value;
+    const resultContainer = document.getElementById('results');
+    
+    resultContainer.innerHTML = '';
+    if (!query) return;
+
+    // 检查数据是否加载
+    if (typeof DICT_DATA === 'undefined') {
+        resultContainer.innerHTML = '<p style="color:red">错误：data.js 未加载或格式不正确。</p>';
+        return;
+    }
+
+    const char = query[0];
+    const targets = new Set([char]);
+    
+    // 关联字逻辑
+    if (typeof VARIANT_MAP !== 'undefined' && VARIANT_MAP[char]) {
+        targets.add(VARIANT_MAP[char]);
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    // 遍历字典
+    Object.keys(DICT_DATA).forEach(key => {
+        // 匹配逻辑：本身，或者以搜索词开头且带括号
+        const isMatch = (targets.has(key) || (key.startsWith(char) && /[㈠-㈩]/.test(key)));
+        
+        if (isMatch) {
+            DICT_DATA[key].forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+
+                let html = `<div class="char-head">${key}</div>`;
+
+                // 1. 地位/注音 (置顶)
+                const mainPhon = getPhonContent(item.status, mode);
+                if (mainPhon) {
+                    html += `<div class="reading-box"><span class="label">【${mode==='status'?'正讀':'正讀'}】</span>${mainPhon}</div>`;
+                }
+
+                // 2. 异读
+                const varPhon = getPhonContent(item.var, mode);
+                if (varPhon) {
+                    html += `<div class="reading-box"><span class="label">【異讀】</span>${varPhon}</div>`;
+                }
+
+                // 3. 原书读音
+                html += `<div class="reading-box"><span class="label">【讀音】</span>${item.orig || '/'}</div>`;
+
+                // 4. 释义
+                html += `<div class="mean-text">${item.mean || '暫無釋義'}</div>`;
+                
+                div.innerHTML = html;
+                fragment.appendChild(div);
+            });
+        }
+    });
+
+    if (fragment.childNodes.length === 0) {
+        resultContainer.innerHTML = `<p style="padding:20px; color:#999;">未收錄「${char}」。</p>`;
+    } else {
+        resultContainer.appendChild(fragment);
+    }
+}
+</script>
+</body>
+</html>
