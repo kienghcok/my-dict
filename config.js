@@ -91,8 +91,14 @@ function derivePhonology(status) {
         mouth = mouth || "開"; 
 
         // 2. 判斷聲調與平仄分化
-        const isVoiced = ["明", "敷", "奉", "微", "泥", "來", "日", "孃", "邪", "禪", "疑", "匣", "喩", "並", "定", "澄", "從", "牀", "羣"].includes(initial);
-        const isVoiced = voicedList.includes(initial);
+        // 全濁聲母（影響平聲送氣：平聲送氣，仄聲不送氣）
+        const voicedList = ["並", "定", "澄", "從", "邪", "牀", "禪", "匣", "羣"];
+
+        // 次濁聲母（平聲不送氣，但屬於濁音，通常對應陽平）
+        const sonorantList = ["明", "微", "泥", "孃", "來", "疑", "喩", "日"];
+
+        // 判斷是否為濁音（全濁 + 次濁），用於決定是否標註「陽平 ˊ」
+        const isVoiced = voicedList.includes(initial) || sonorantList.includes(initial);        const isVoiced = voicedList.includes(initial);
         const toneKey = (tone === "平" && isVoiced) ? "濁平" : (tone === "平" ? "清平" : tone);
 
         // 3. 推導聲母
