@@ -188,7 +188,6 @@ function derivePhonology(status, opts) {
 
     if (opts.phoneticScheme === "roma") {
         // 空韻處理
-        if (opts.phoneticScheme === "roma") {
     if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
         if (resF === "ㄭ") {
             fStr = "i";
