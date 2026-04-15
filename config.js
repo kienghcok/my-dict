@@ -182,10 +182,11 @@ function derivePhonology(status, opts) {
         const marks = opts.zhongzhouTone 
             ? { "清平":"", "濁平":"ˇ", "上":"ˋ", "去":"ˊ", "入":"˙" }
             : { "清平":"", "濁平":"ˊ", "上":"ˇ", "去":"ˋ", "入":"˙" };
-        return `${resI}${resF}${marks[toneKey] || ""}`;
+        const displayF = (resF === "ㄭ") ? "" : resF;
+        return `${resI}${displayF}${marks[toneKey] || ""}`;
     }
 
-    // 輸出處理 - 羅馬/IPA
+    // 2. 獲取羅馬/IPA 基礎字符串
     const idx = opts.phoneticScheme === "roma" ? 0 : 1;
     let fStr = (MAP.f[resF] ? MAP.f[resF][idx] : resF) || "";
     let iStr = (MAP.i[resI] ? MAP.i[resI][idx] : resI) || "";
@@ -195,20 +196,15 @@ function derivePhonology(status, opts) {
         fStr = fStr.replace(/m$/, "p").replace(/n$/, "t").replace(/ng$/, "k").replace(/ŋ$/, "k");
     }
 
+    // 3. 輸出處理 - 羅馬拼音
     if (opts.phoneticScheme === "roma") {
-        // 空韻處理
-    if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
-        if (resF === "ㄭ") {
-            fStr = "i";
-        } else if (resF === "ㄧ") {
-            fStr = "ii";
+        if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
+            if (resF === "ㄭ") fStr = "i";
+            else if (resF === "ㄧ") fStr = "ii";
         }
-    }
         
-        // 羅馬標調索引映射
         let tIdx;
         if (opts.zhongzhouTone) {
-            // 中州調型：陰平ā(0), 陽平ǎ(2), 上聲à(3), 去聲á(1)
             const zzMap = { "清平":0, "濁平":2, "上":3, "去":1, "入":4 };
             tIdx = zzMap[toneKey];
         } else {
@@ -218,9 +214,25 @@ function derivePhonology(status, opts) {
         return `${iStr}${applyTone(fStr, tIdx)}`;
     }
 
-    // IPA 標調
-    const ipaT = opts.zhongzhouTone 
-        ? { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" } 
-        : { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" };
-    return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
+    // 4. 輸出處理 - IPA (新增 ㄓㄔㄕㄖ+ㄭ 的特殊處理)
+    if (opts.phoneticScheme === "ipa") {
+        if (resF === "ㄭ") {
+            if (resI === "ㄖ") {
+                // ㄖ + ㄭ -> r
+                iStr = "r";
+                fStr = "";
+            } else if (["ㄓ", "ㄔ", "ㄕ"].includes(resI)) {
+                // ㄓㄔㄕ 保持聲母 + ʅ
+                fStr = "ʅ";
+            } else if (["ㄗ", "ㄘ", "ㄙ"].includes(resI)) {
+                // ㄗㄘㄙ 轉回 ɿ (如果需要區分舌尖前後)
+                fStr = "ɿ";
+            }
+        }
+
+        const ipaT = opts.zhongzhouTone 
+            ? { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" } 
+            : { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" };
+        return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
+    }
 }
