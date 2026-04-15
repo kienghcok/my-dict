@@ -152,7 +152,11 @@ function derivePhonology(status, opts) {
             "ㄨㄥ":"ㄨㄜ", "ㄤ":"ㄛ", "ㄧㄤ":"ㄧㄛ", "ㄩㄤ":"ㄩㄛ","ㄨㄤ":"ㄨㄛ",
             "ㄧㆰ":"ㄧㆤ", "ㄧㄢ":"ㄧㆤ", "ㄧ干":"ㄧㆤ"
         };
+                const oldRuF = resF;
         if (ruMap[resF]) resF = ruMap[resF];
+        if (["ㄓ", "ㄔ", "ㄕ", "ㄖ"].includes(resI) && ["ㄣ", "ㆬ", "ㄥ"].includes(oldRuF)) {
+            resF = "ㄭ";
+        }
     }
 
     // 基礎演變 (其餘選項)
