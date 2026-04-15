@@ -109,7 +109,7 @@ function derivePhonology(status, opts) {
     if (rules) {
         const key = mouth + (grade || "");
         resF = rules[key] || rules[mouth] || "";
-        if (typeof resF === "function") resF = resF(init);
+        if (typeof resF === "function") resF = resF(init, tone, mouth, grade);
     }
 
     // --- 演變邏輯 ---
