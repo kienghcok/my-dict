@@ -5,104 +5,189 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學生字典查詢系統</title>
     <style>
-        :root { --accent: #c0392b; --bg: #fdfdfd; --border: #eee; }
+        :root { --accent: #c0392b; --bg: #fdfdfd; --border: #eee; --shadow: 0 4px 12px rgba(0,0,0,0.15); }
         body { font-family: "PingFang TC", "Microsoft JhengHei", serif; max-width: 700px; margin: 0 auto; padding: 20px; background: #fff; line-height: 1.6; color: #333; }
-        .sticky-top { position: sticky; top: 0; background: #fff; padding: 15px 0; border-bottom: 2px solid var(--border); z-index: 10; }
-        input[type="text"] { width: 100%; padding: 12px; font-size: 1.2rem; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; outline: none; }
+        .sticky-top { position: sticky; top: 0; background: #fff; padding: 15px 0; border-bottom: 2px solid var(--border); z-index: 10; display: flex; align-items: center; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; outline: none; transition: border 0.3s; }
         input[type="text"]:focus { border-color: var(--accent); }
-        .options { margin-top: 12px; display: flex; gap: 15px; font-size: 0.9rem; color: #555; }
-        .result-item { margin: 25px 0; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
-        .char-head { font-size: 2.8rem; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
-        .reading-box { background: #fff; padding: 8px 15px; border-radius: 6px; border: 1px solid #f0f0f0; margin-bottom: 8px; }
-        .label { font-weight: bold; color: #7f8c8d; margin-right: 8px; font-size: 0.8rem; }
-        .phon-text { color: #2c3e50; font-weight: 500; }
-        .bopomofo { color: var(--accent); font-weight: bold; letter-spacing: 1px; }
-        .mean-text { white-space: pre-wrap; padding-top: 10px; border-top: 1px dashed var(--border); margin-top: 10px; font-size: 1.05rem; }
-        label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-settings { background: #f0f0f0; border: none; width: 45px; height: 45px; border-radius: 10px; cursor: pointer; font-size: 1.2rem; }
+        
+        /* 下拉菜單與彈窗 */
+        .dropdown { position: relative; }
+        .dropdown-menu { position: absolute; right: 0; top: 55px; background: white; box-shadow: var(--shadow); border-radius: 8px; display: none; padding: 10px; min-width: 150px; z-index: 100; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        
+        /* 搜索結果樣式 */
+        .result-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
+        .char-head { font-size: 2.5rem; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+        .reading-box { margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; }
+        .label-tag { font-size: 0.85rem; color: #888; white-space: nowrap; }
+        .bopomofo { font-size: 1.2rem; font-weight: 500; color: #2c3e50; }
+        .mean-text { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap; font-size: 0.95rem; }
+        
+        .opt-group { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .opt-title { font-weight: bold; margin-bottom: 8px; display: block; color: var(--accent); }
+        label { display: inline-flex; align-items: center; margin-right: 15px; cursor: pointer; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
 <div class="sticky-top">
-    <input type="text" id="searchInput" placeholder="輸入單字查詢..." maxlength="1" oninput="doSearch()">
-    <div class="options">
-        顯示模式：
-        <label><input type="radio" name="displayMode" value="status" checked onchange="doSearch()"> 音韻地位</label>
-        <label><input type="radio" name="displayMode" value="bopomofo" onchange="doSearch()"> 注音符號</label>
+    <input type="text" id="searchInput" placeholder="輸入單字（支持簡繁體）..." onkeypress="if(event.key==='Enter') doSearch()">
+    <div class="dropdown">
+        <button class="btn-settings" onclick="toggleMenu(event)">⚙️</button>
+        <div id="dropdownMenu" class="dropdown-menu">
+            <div style="padding:10px; cursor:pointer;" onclick="openSettings()">推導設置</div>
+            <div style="padding:10px; border-top:1px solid #eee; color:#c0392b; cursor:pointer;" onclick="location.reload()">重新整理</div>
+        </div>
     </div>
 </div>
 
 <div id="results"></div>
 
-<script src="config.js"></script>
+<div id="modalOverlay" class="modal-overlay">
+    <div class="modal">
+        <h3>音韻推導設置</h3>
+        <div class="opt-group">
+            <span class="opt-title">顯示方案</span>
+            <label><input type="radio" name="displayMode" value="status" onchange="updateUI()"> 原始地位</label>
+            <label><input type="radio" name="displayMode" value="bopomofo" checked onchange="updateUI()"> 推導拼讀</label>
+        </div>
+        
+        <div id="scheme-selector" class="opt-group">
+            <span class="opt-title">推導方案</span>
+            <label><input type="radio" name="phoneticScheme" value="zhuyin" checked> 注音</label>
+            <label><input type="radio" name="phoneticScheme" value="roma"> 羅馬</label>
+            <label><input type="radio" name="phoneticScheme" value="ipa"> IPA</label>
+        </div>
+
+        <div id="sub-options">
+            <div class="opt-group">
+                <span class="opt-title">聲母演變</span>
+                <label><input type="checkbox" class="opt" data-key="dropVng"> 疑微脫落</label>
+                <label><input type="checkbox" class="opt" data-key="palatalization"> 見系顎化</label>
+                <label><input type="checkbox" class="opt" data-key="dropFw"> 輕唇不合</label>
+                <label><input type="checkbox" class="opt" data-key="riToEr"> 日母兒化</label>
+            </div>
+<div class="opt-group">
+    <span class="opt-title">韻母/聲調</span>
+<label><input type="checkbox" class="opt" data-key="zhuangSan"> 莊三化二</label>
+    <label><input type="checkbox" class="opt" data-key="qiToI"> 齊韻歸支</label>
+    <label><input type="checkbox" class="opt" data-key="mergeDongGeng"> 東庚合併</label> 
+   <label><input type="checkbox" class="opt" data-key="mergeRuRime"> 入聲韻合併</label>
+   <label><input type="checkbox" class="opt" data-key="simplifyAn"> 簡化山攝</label>
+    <label><input type="checkbox" class="opt" data-key="simplifyAm"> 咸攝入山</label>
+    <label><input type="checkbox" class="opt" data-key="zhongzhouTone"> 中州調型</label>
+</div>
+        </div>
+
+        <div style="text-align:right; margin-top:20px;">
+            <button onclick="closeSettings()" style="padding:8px 20px; border:none; background:#ddd; border-radius:5px; cursor:pointer;">取消</button>
+            <button onclick="saveAndSearch()" style="padding:8px 20px; border:none; background:var(--accent); color:white; border-radius:5px; cursor:pointer; margin-left:10px;">應用並儲存</button>
+        </div>
+    </div>
+</div>
+
 <script src="data.js"></script>
+<script src="config.js"></script>
 
 <script>
-// 辅助函数：转换内容
-const getPhonContent = (val, mode) => {
-    if (!val || val === '/' || val === 'nan' || val === 'None') return null;
-    if (mode === 'status') return `<span class="phon-text">${val}</span>`;
-    
-    // 检查 derivePhonology 是否存在
-    if (typeof derivePhonology === 'function') {
-        const bp = derivePhonology(val);
-        return `<span class="bopomofo">${bp}</span>`;
-    }
-    return `<span class="phon-text" style="color:gray">${val}(插件未載)</span>`;
+function toggleMenu(e) { 
+    e.stopPropagation(); 
+    const m = document.getElementById('dropdownMenu'); 
+    m.style.display = m.style.display === 'block' ? 'none' : 'block'; 
+}
+
+function openSettings() { document.getElementById('modalOverlay').style.display='flex'; }
+function closeSettings() { document.getElementById('modalOverlay').style.display='none'; }
+window.onclick = () => { document.getElementById('dropdownMenu').style.display='none'; }
+
+function updateUI() {
+    const isBopomofo = document.querySelector('input[name="displayMode"]:checked').value === 'bopomofo';
+    document.getElementById('scheme-selector').style.display = isBopomofo ? 'block' : 'none';
+    document.getElementById('sub-options').style.display = isBopomofo ? 'block' : 'none';
+}
+
+window.onload = () => {
+    const saved = JSON.parse(localStorage.getItem('phon_cfg') || '{}');
+    document.querySelectorAll('.opt').forEach(el => { 
+        if(saved[el.dataset.key] !== undefined) el.checked = saved[el.dataset.key]; 
+    });
+    if(saved.displayMode) document.querySelector(`input[name="displayMode"][value="${saved.displayMode}"]`).checked = true;
+    if(saved.phoneticScheme) document.querySelector(`input[name="phoneticScheme"][value="${saved.phoneticScheme}"]`).checked = true;
+    updateUI();
 };
+
+function getActiveOptions() {
+    const opts = {};
+    document.querySelectorAll('.opt').forEach(el => opts[el.dataset.key] = el.checked);
+    opts.displayMode = document.querySelector('input[name="displayMode"]:checked').value;
+    opts.phoneticScheme = document.querySelector('input[name="phoneticScheme"]:checked').value;
+    return opts;
+}
+
+function saveAndSearch() { 
+    localStorage.setItem('phon_cfg', JSON.stringify(getActiveOptions())); 
+    closeSettings();
+    doSearch(); 
+}
 
 function doSearch() {
     const query = document.getElementById('searchInput').value.trim();
-    const mode = document.querySelector('input[name="displayMode"]:checked').value;
     const resultContainer = document.getElementById('results');
-    
     resultContainer.innerHTML = '';
     if (!query) return;
 
-    // 检查数据是否加载
-    if (typeof DICT_DATA === 'undefined') {
-        resultContainer.innerHTML = '<p style="color:red">错误：data.js 未加载或格式不正确。</p>';
-        return;
-    }
+    const opts = getActiveOptions();
+    const mode = opts.displayMode;
+    const inputChar = query[0]; 
 
-    const char = query[0];
-    const targets = new Set([char]);
-    
-    // 关联字逻辑
-    if (typeof VARIANT_MAP !== 'undefined' && VARIANT_MAP[char]) {
-        targets.add(VARIANT_MAP[char]);
+    // 1. 建立匹配目標集合 (解決簡體字查不到的問題)
+    // 注意：這裡直接訪問 VARIANT_MAP，不加 window.
+    const targets = new Set([inputChar]);
+    if (typeof VARIANT_MAP !== 'undefined') {
+        // 若輸入的是簡體/異體 -> 加入對應的正體
+        if (VARIANT_MAP[inputChar]) {
+            const v = VARIANT_MAP[inputChar];
+            if (Array.isArray(v)) v.forEach(x => targets.add(x));
+            else targets.add(v);
+        }
+        // 反向：若輸入的是正體 -> 加入所有對應的簡體/異體
+        for (const [vChar, stdChar] of Object.entries(VARIANT_MAP)) {
+            const stds = Array.isArray(stdChar) ? stdChar : [stdChar];
+            if (stds.includes(inputChar)) targets.add(vChar);
+        }
     }
 
     const fragment = document.createDocumentFragment();
+    let found = false;
 
-    // 遍历字典
-    Object.keys(DICT_DATA).forEach(key => {
-        // 匹配逻辑：本身，或者以搜索词开头且带括号
-        const isMatch = (targets.has(key) || (key.startsWith(char) && /[㈠-㈩]/.test(key)));
+    // 2. 高效遍歷字典
+    Object.entries(DICT_DATA).forEach(([key, items]) => {
+        // 提取純字頭（去掉㈠㈡等符號）
+        const pureKey = key.replace(/[㈠-㈩]/g, '');
         
-        if (isMatch) {
-            DICT_DATA[key].forEach(item => {
+        if (targets.has(pureKey)) {
+            found = true;
+            items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'result-item';
-
                 let html = `<div class="char-head">${key}</div>`;
+                
+                const process = (status) => {
+                    if (!status || status === '/') return null;
+                    if (mode === 'status') return status;
+                    return typeof derivePhonology === 'function' ? derivePhonology(status, opts) : status;
+                };
 
-                // 1. 地位/注音 (置顶)
-                const mainPhon = getPhonContent(item.status, mode);
-                if (mainPhon) {
-                    html += `<div class="reading-box"><span class="label">【${mode==='status'?'正讀':'正讀'}】</span>${mainPhon}</div>`;
-                }
-
-                // 2. 异读
-                const varPhon = getPhonContent(item.var, mode);
-                if (varPhon) {
-                    html += `<div class="reading-box"><span class="label">【異讀】</span>${varPhon}</div>`;
-                }
-
-                // 3. 原书读音
-                html += `<div class="reading-box"><span class="label">【讀音】</span>${item.orig || '/'}</div>`;
-
-                // 4. 释义
+                const main = process(item.status);
+                if (main) html += `<div class="reading-box"><span class="label-tag">【正讀】</span><span class="bopomofo">${main}</span></div>`;
+                
+                const v = process(item.var);
+                if (v) html += `<div class="reading-box"><span class="label-tag">【異讀】</span><span class="bopomofo">${v}</span></div>`;
+                
+                html += `<div class="reading-box"><span class="label-tag">【讀音】</span>${item.orig || '/'}</div>`;
                 html += `<div class="mean-text">${item.mean || '暫無釋義'}</div>`;
                 
                 div.innerHTML = html;
@@ -111,8 +196,8 @@ function doSearch() {
         }
     });
 
-    if (fragment.childNodes.length === 0) {
-        resultContainer.innerHTML = `<p style="padding:20px; color:#999;">未收錄「${char}」。</p>`;
+    if (!found) {
+        resultContainer.innerHTML = `<p style="padding:20px; color:#999;">未收錄「${inputChar}」。</p>`;
     } else {
         resultContainer.appendChild(fragment);
     }
