@@ -179,9 +179,9 @@ function derivePhonology(status, opts) {
 
     // 輸出處理 - 注音
     if (opts.phoneticScheme === "zhuyin") {
-        const marks = opts.zhongzhouTone 
-            ? { "清平":"", "濁平":"ˇ", "上":"ˋ", "去":"ˊ", "入":"˙" }
-            : { "清平":"", "濁平":"ˊ", "上":"ˇ", "去":"ˋ", "入":"˙" };
+        const marks = opts.beijingTone 
+            ? { "清平":"", "濁平":"ˊ", "上":"ˇ", "去":"ˋ", "入":"˙" }
+            : { "清平":"", "濁平":"ˇ", "上":"ˋ", "去":"ˊ", "入":"˙" };
         const displayF = (resF === "ㄭ") ? "" : resF;
         return `${resI}${displayF}${marks[toneKey] || ""}`;
     }
@@ -204,12 +204,12 @@ function derivePhonology(status, opts) {
         }
         
         let tIdx;
-        if (opts.zhongzhouTone) {
+        if (opts.beijingTone) {
+            const bjMap = { "清平":0, "濁平":1, "上":2, "去":3, "入":4 };
+            tIdx = bjMap[toneKey];
+        } else {
             const zzMap = { "清平":0, "濁平":2, "上":3, "去":1, "入":4 };
             tIdx = zzMap[toneKey];
-        } else {
-            const stdMap = { "清平":0, "濁平":1, "上":2, "去":3, "入":4 };
-            tIdx = stdMap[toneKey];
         }
         return `${iStr}${applyTone(fStr, tIdx)}`;
     }
@@ -230,9 +230,9 @@ function derivePhonology(status, opts) {
             }
         }
 
-        const ipaT = opts.zhongzhouTone 
-            ? { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" } 
-            : { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" };
+        const ipaT = opts.beijingTone
+            ? { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" }
+            : { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" };
         return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
     }
 }
