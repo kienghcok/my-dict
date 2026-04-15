@@ -188,9 +188,14 @@ function derivePhonology(status, opts) {
 
     if (opts.phoneticScheme === "roma") {
         // 空韻處理
-        if (["z","c","s","zh","ch","sh","r"].includes(iStr) && (fStr === "i" || fStr === "")) {
-            fStr = (iStr.length > 1 || ["s","r","z","c"].includes(iStr)) ? "ii" : "i";
+        if (opts.phoneticScheme === "roma") {
+    if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
+        if (resF === "ㄭ") {
+            fStr = "i";
+        } else if (resF === "ㄧ") {
+            fStr = "ii";
         }
+    }
         
         // 羅馬標調索引映射
         let tIdx;
