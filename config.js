@@ -112,7 +112,7 @@ function derivePhonology(status, opts) {
         if (typeof resF === "function") resF = resF(init, tone, mouth, grade);
     }
 
-    // --- 演變邏輯 ---
+// --- 演變邏輯 ---
 
     // 1. 東庚合併功能
     if (opts.mergeDongGeng) {
@@ -131,13 +131,13 @@ function derivePhonology(status, opts) {
     // 2. 齊韻歸一
     if (opts.qiToI && resF === "ㄧㄟ") resF = "ㄧ";
 
-// 3. 莊三化二 (修正版)
+    // 3. 莊三化二
     if (opts.zhuangSan && ["ㄓ", "ㄔ", "ㄕ", "ㄖ"].includes(resI)) {
         if (resF.startsWith("ㄧ")) {
             resF = resF.replace(/^ㄧ/, ""); 
-            if (resF === "") resF = "ㄭ"; // 脫落後補空韻
+            if (resF === "") resF = "ㄭ"; 
         } else if (resF.startsWith("ㄩ")) {
-            resF = resF.replace(/^ㄩ/, "ㄨ"); // ㄩ 變 ㄨ
+            resF = resF.replace(/^ㄩ/, "ㄨ"); 
         }
     }
 
@@ -152,32 +152,32 @@ function derivePhonology(status, opts) {
             "ㄨㄥ":"ㄨㄜ", "ㄤ":"ㄛ", "ㄧㄤ":"ㄧㄛ", "ㄩㄤ":"ㄩㄛ","ㄨㄤ":"ㄨㄛ",
             "ㄧㆰ":"ㄧㆤ", "ㄧㄢ":"ㄧㆤ", "ㄧ干":"ㄧㆤ"
         };
-                const oldRuF = resF;
+        const oldRuF = resF;
         if (ruMap[resF]) resF = ruMap[resF];
         if (["ㄓ", "ㄔ", "ㄕ", "ㄖ"].includes(resI) && ["ㄣ", "ㆬ", "ㄥ"].includes(oldRuF)) {
             resF = "ㄭ";
         }
     }
 
-    // 基礎演變 (其餘選項)
+    // 基礎演變
     if (opts.dropVng && (resI === "ㄪ" || resI === "ㄫ")) resI = "";
     if (opts.palatalization && (mouth === "齊" || mouth === "撮")) {
         const pMap = { "ㄍ": "ㄐ", "ㄎ": "ㄑ", "ㄫ": "ㄬ", "ㄏ": "ㄒ" };
         if (pMap[resI]) resI = pMap[resI];
     }
-    if (opts.dropFw) { const labials = ["ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄪ"]; 
+    if (opts.dropFw) { 
+        const labials = ["ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄪ"]; 
         if (labials.includes(resI)) {
             if (resF.length > 1 && resF.startsWith("ㄨ")) {
-            resF = resF.substring(1);
+                resF = resF.substring(1);
             }
         }
     }
     if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
-if (opts.simplifyAn) {
-            // 當介音是 i (ㄧ) 或 y (ㄩ) 且韻母是 an (ㄢ) 時，將 a 變為 ɛ
-            if (fStr === "ian") fStr = "iɛn";
-            if (fStr === "üan" || fStr === "yan") fStr = "yɛn";
-        }    if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
+    
+    // 山攝/咸攝簡化 (注音層面)
+    if (opts.simplifyAn) { resF = resF.replace("干", "ㄢ"); }
+    if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
 
     // 聲調計算
     const fullV = ["並","奉","定","澄","從","牀","羣","邪","禪","匣"];
@@ -194,6 +194,49 @@ if (opts.simplifyAn) {
         const displayF = (resF === "ㄭ") ? "" : resF;
         return `${resI}${displayF}${marks[toneKey] || ""}`;
     }
+
+    // --- 關鍵修正區：先獲取基礎字符串，再進行 IPA 修正 ---
+    const idx = opts.phoneticScheme === "roma" ? 0 : 1;
+    let fStr = (MAP.f[resF] ? MAP.f[resF][idx] : resF) || "";
+    let iStr = (MAP.i[resI] ? MAP.i[resI][idx] : resI) || "";
+
+    // 強制轉換入聲韻尾
+    if (tone === "入") {
+        fStr = fStr.replace(/m$/, "p").replace(/n$/, "t").replace(/ng$/, "k").replace(/ŋ$/, "k");
+    }
+
+    // 3. 輸出處理 - 羅馬拼音
+    if (opts.phoneticScheme === "roma") {
+        if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
+            if (resF === "ㄭ") fStr = "i";
+            else if (resF === "ㄧ") fStr = "ii";
+        }
+        let tIdx = opts.beijingTone ? { "清平":0, "濁平":1, "上":2, "去":3, "入":4 }[toneKey] : { "清平":0, "濁平":2, "上":3, "去":1, "入":4 }[toneKey];
+        return `${iStr}${applyTone(fStr, tIdx)}`;
+    }
+
+    // 4. 輸出處理 - IPA
+    if (opts.phoneticScheme === "ipa") {
+        // 處理空韻
+        if (resF === "ㄭ") {
+            if (resI === "ㄖ") { iStr = "r"; fStr = ""; }
+            else if (["ㄓ", "ㄔ", "ㄕ"].includes(resI)) fStr = "ʅ";
+            else if (["ㄗ", "ㄘ", "ㄙ"].includes(resI)) fStr = "ɿ";
+        }
+
+        // --- 修正：simplifyAn 對 IPA 的影響必須放在這裡 ---
+        if (opts.simplifyAn) {
+            // 當前 fStr 已經是從 MAP 取得的 "ian" 或 "üan"
+            if (fStr === "ian") fStr = "iɛn";
+            if (fStr === "üan" || fStr === "yan") fStr = "yɛn";
+        }
+
+        const ipaT = opts.beijingTone
+            ? { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" }
+            : { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" };
+        return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
+    }
+}
 
     // 2. 獲取羅馬/IPA 基礎字符串
     const idx = opts.phoneticScheme === "roma" ? 0 : 1;
