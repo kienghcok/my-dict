@@ -165,7 +165,7 @@ function derivePhonology(status, opts) {
         const pMap = { "ㄍ": "ㄐ", "ㄎ": "ㄑ", "ㄫ": "ㄬ", "ㄏ": "ㄒ" };
         if (pMap[resI]) resI = pMap[resI];
     }
-    if (opts.dropFw && ["ㄈ", "ㄈˇ", "ㄈˋ", "ㄇ"].includes(resI)) { if (resF !== "ㄨ" && resF.startsWith("ㄨ")) { resF = resF.substring(1); } }
+    if (opts.dropFw) const labials = ["ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄪ"];  if (labials.includes(resI)) { if (resF.length > 1 && resF.startsWith("ㄨ")) { resF = resF.substring(1); } }}
     if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
     if (opts.simplifyAn) resF = resF.replace("干", "ㄢ");
     if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
