@@ -147,19 +147,12 @@ function doSearch() {
     const fragment = document.createDocumentFragment();
     let found = false;
 
-    // 將輸入的字串拆解成單個字進行處理
     [...inputChar].forEach(rawKey => {
-        // --- 新增：利用 VARIANT_MAP 進行轉換 ---
-        let keysToSearch = [rawKey]; // 默認搜索原字
-        
-        // 如果在對照表裡找到了對應的繁體字或正體字，就把目標加入搜索列表
+        let keysToSearch = [rawKey];
         if (typeof VARIANT_MAP !== 'undefined' && VARIANT_MAP[rawKey]) {
-            // VARIANT_MAP[rawKey] 是一個數組，例如 ["島"] 或 ["並", "併"]
             keysToSearch = keysToSearch.concat(VARIANT_MAP[rawKey]);
         }
 
-        // 遍歷所有可能的字頭（原字 + 對照表中的字）
-        // 使用 Set 確保去重，避免同一個字搜兩次
         [...new Set(keysToSearch)].forEach(key => {
             const items = DICT_DATA[key];
             if (items) {
@@ -176,11 +169,21 @@ function doSearch() {
 
                     let html = `<div class="char-head">${key} ${tagsHtml}</div>`;
 
+                    // --- 修改後的處理函數 ---
                     const process = (status) => {
                         if (!status || status === '/') return null;
                         if (status.includes('|')) return status.split('|').map(s => process(s)).join(' | ');
+                        
+                        // 檢查是否有「今讀」標記
+                        const hasTodayMark = status.includes('今讀') || status.includes('今');
+                        
+                        // 清洗地位字串，去掉括號內容以便推導
                         let cleanStatus = status.replace(/（[^）]+）/g, '').replace(/\([^)]+\)/g, '').trim();
-                        return (typeof derivePhonology === 'function') ? derivePhonology(cleanStatus, opts) : status;
+                        
+                        let result = (typeof derivePhonology === 'function') ? derivePhonology(cleanStatus, opts) : status;
+                        
+                        // 如果原本有「今讀」，則在推導結果後加上標記
+                        return hasTodayMark ? `${result} <small style="color:#888;">(今讀)</small>` : result;
                     };
 
                     if (mode === 'orig') {
