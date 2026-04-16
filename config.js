@@ -173,20 +173,11 @@ function derivePhonology(status, opts) {
         }
     }
     if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
-    if (opts.simplifyAn && opts.phoneticScheme === "ipa") {
-    // 將 ian 替換為 iɛn
-    if (ipaOutput.includes("ian")) {
-        ipaOutput = ipaOutput.replace("ian", "iɛn");
-    }
-    // 將 üan 或 yan 替換為 yɛn (取決於你 IPA 裡是用 ü 還是 y)
-    if (ipaOutput.includes("üan")) {
-        ipaOutput = ipaOutput.replace("üan", "yɛn");
-    }
-    if (ipaOutput.includes("yan")) {
-        ipaOutput = ipaOutput.replace("yan", "yɛn");
-    }
-}
-    if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
+if (opts.simplifyAn) {
+            // 當介音是 i (ㄧ) 或 y (ㄩ) 且韻母是 an (ㄢ) 時，將 a 變為 ɛ
+            if (fStr === "ian") fStr = "iɛn";
+            if (fStr === "üan" || fStr === "yan") fStr = "yɛn";
+        }    if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
 
     // 聲調計算
     const fullV = ["並","奉","定","澄","從","牀","羣","邪","禪","匣"];
