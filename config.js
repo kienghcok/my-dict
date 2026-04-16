@@ -112,7 +112,7 @@ function derivePhonology(status, opts) {
         if (typeof resF === "function") resF = resF(init, tone, mouth, grade);
     }
 
-// --- 演變邏輯 ---
+    // --- 演變邏輯 ---
 
     // 1. 東庚合併功能
     if (opts.mergeDongGeng) {
@@ -159,7 +159,7 @@ function derivePhonology(status, opts) {
         }
     }
 
-    // 基礎演變
+    // 基礎演變 (其餘選項)
     if (opts.dropVng && (resI === "ㄪ" || resI === "ㄫ")) resI = "";
     if (opts.palatalization && (mouth === "齊" || mouth === "撮")) {
         const pMap = { "ㄍ": "ㄐ", "ㄎ": "ㄑ", "ㄫ": "ㄬ", "ㄏ": "ㄒ" };
@@ -195,50 +195,7 @@ function derivePhonology(status, opts) {
         return `${resI}${displayF}${marks[toneKey] || ""}`;
     }
 
-    // --- 關鍵修正區：先獲取基礎字符串，再進行 IPA 修正 ---
-    const idx = opts.phoneticScheme === "roma" ? 0 : 1;
-    let fStr = (MAP.f[resF] ? MAP.f[resF][idx] : resF) || "";
-    let iStr = (MAP.i[resI] ? MAP.i[resI][idx] : resI) || "";
-
-    // 強制轉換入聲韻尾
-    if (tone === "入") {
-        fStr = fStr.replace(/m$/, "p").replace(/n$/, "t").replace(/ng$/, "k").replace(/ŋ$/, "k");
-    }
-
-    // 3. 輸出處理 - 羅馬拼音
-    if (opts.phoneticScheme === "roma") {
-        if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
-            if (resF === "ㄭ") fStr = "i";
-            else if (resF === "ㄧ") fStr = "ii";
-        }
-        let tIdx = opts.beijingTone ? { "清平":0, "濁平":1, "上":2, "去":3, "入":4 }[toneKey] : { "清平":0, "濁平":2, "上":3, "去":1, "入":4 }[toneKey];
-        return `${iStr}${applyTone(fStr, tIdx)}`;
-    }
-
-    // 4. 輸出處理 - IPA
-    if (opts.phoneticScheme === "ipa") {
-        // 處理空韻
-        if (resF === "ㄭ") {
-            if (resI === "ㄖ") { iStr = "r"; fStr = ""; }
-            else if (["ㄓ", "ㄔ", "ㄕ"].includes(resI)) fStr = "ʅ";
-            else if (["ㄗ", "ㄘ", "ㄙ"].includes(resI)) fStr = "ɿ";
-        }
-
-        // --- 修正：simplifyAn 對 IPA 的影響必須放在這裡 ---
-        if (opts.simplifyAn) {
-            // 當前 fStr 已經是從 MAP 取得的 "ian" 或 "üan"
-            if (fStr === "ian") fStr = "iɛn";
-            if (fStr === "üan" || fStr === "yan") fStr = "yɛn";
-        }
-
-        const ipaT = opts.beijingTone
-            ? { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" }
-            : { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" };
-        return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
-    }
-}
-
-    // 2. 獲取羅馬/IPA 基礎字符串
+    // --- 關鍵步驟：獲取基礎 IPA/羅馬 字符串 ---
     const idx = opts.phoneticScheme === "roma" ? 0 : 1;
     let fStr = (MAP.f[resF] ? MAP.f[resF][idx] : resF) || "";
     let iStr = (MAP.i[resI] ? MAP.i[resI][idx] : resI) || "";
@@ -255,36 +212,33 @@ function derivePhonology(status, opts) {
             else if (resF === "ㄧ") fStr = "ii";
         }
         
-        let tIdx;
-        if (opts.beijingTone) {
-            const bjMap = { "清平":0, "濁平":1, "上":2, "去":3, "入":4 };
-            tIdx = bjMap[toneKey];
-        } else {
-            const zzMap = { "清平":0, "濁平":2, "上":3, "去":1, "入":4 };
-            tIdx = zzMap[toneKey];
-        }
+        const tIdx = opts.beijingTone 
+            ? { "清平":0, "濁平":1, "上":2, "去":3, "入":4 }[toneKey]
+            : { "清平":0, "濁平":2, "上":3, "去":1, "入":4 }[toneKey];
+            
         return `${iStr}${applyTone(fStr, tIdx)}`;
     }
 
-    // 4. 輸出處理 - IPA (新增 ㄓㄔㄕㄖ+ㄭ 的特殊處理)
+    // 4. 輸出處理 - IPA
     if (opts.phoneticScheme === "ipa") {
+        // 處理空韻與特殊聲母組合
         if (resF === "ㄭ") {
-            if (resI === "ㄖ") {
-                // ㄖ + ㄭ -> r
-                iStr = "r";
-                fStr = "";
-            } else if (["ㄓ", "ㄔ", "ㄕ"].includes(resI)) {
-                // ㄓㄔㄕ 保持聲母 + ʅ
-                fStr = "ʅ";
-            } else if (["ㄗ", "ㄘ", "ㄙ"].includes(resI)) {
-                // ㄗㄘㄙ 轉回 ɿ (如果需要區分舌尖前後)
-                fStr = "ɿ";
-            }
+            if (resI === "ㄖ") { iStr = "r"; fStr = ""; }
+            else if (["ㄓ", "ㄔ", "ㄕ"].includes(resI)) fStr = "ʅ";
+            else if (["ㄗ", "ㄘ", "ㄙ"].includes(resI)) fStr = "ɿ";
+        }
+
+        // --- 修正：simplifyAn 對 IPA 的影響 ---
+        if (opts.simplifyAn) {
+            // 此時 fStr 已從 MAP 取得，例如 "ian"
+            if (fStr === "ian") fStr = "iɛn";
+            if (fStr === "üan" || fStr === "yan") fStr = "yɛn";
         }
 
         const ipaT = opts.beijingTone
             ? { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" }
             : { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" };
+            
         return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
     }
 }
