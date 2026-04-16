@@ -190,12 +190,34 @@ items.forEach(item => {
                 `;
                 // --- 標籤處理結束 ---
                 
-                const process = (status) => {
-                    if (!status || status === '/') return null;
-                    if (mode === 'status') return status;
-                    return typeof derivePhonology === 'function' ? derivePhonology(status, opts) : status;
-                };
+const process = (status) => {
+    if (!status || status === '/') return null;
+    if (mode === 'status') return status;
 
+    // 1. 處理帶有 "|" 的多重地位（如：曉齊三紙上|審齊二支平）
+    if (status.includes('|')) {
+        return status.split('|')
+            .map(s => process(s)) // 遞迴處理每一組
+            .join(' | ');
+    }
+
+    // 2. 清洗地位字串，去掉「（今讀）」或括號內容
+    // 例如將 "滂合一麌上（今讀）" 轉為 "滂合一麌上"
+    let cleanStatus = status.replace(/（[^）]+）/g, '').replace(/\([^)]+\)/g, '').trim();
+
+    // 3. 調用推導引擎
+    if (typeof derivePhonology === 'function') {
+        let result = derivePhonology(cleanStatus, opts);
+        
+        // 如果原本有「（今讀）」，推導完後把它貼回去，增加可讀性
+        if (status.includes('今讀')) {
+            result += ' (今)';
+        }
+        return result;
+    }
+    
+    return status;
+};
                 const main = process(item.status);
                 if (main) html += `<div class="reading-box"><span class="label-tag">【正讀】</span><span class="bopomofo">${main}</span></div>`;
                 
