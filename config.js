@@ -73,7 +73,7 @@ function ipaToOthers(ipaStr, toneCode, type) {
     const finalMap = {
         "uɑŋ": ["ㄨㄤ","uang"], "iɑŋ": ["ㄧㄤ","iang"], "uɔŋ": ["ㄨㄤ","uang"], "yɔŋ": ["ㄩㄤ","iang"],
         "iɛu": ["ㄧㄠ","iao"], "iau": ["ㄧㄠ","iao"], "iɛm": ["ㄧㄢ","iam"], "iam": ["ㄧㄢ","iam"],
-        "iɛn": ["ㄧㄢ","ian"], "ian": ["ㄧㄢ","ian"], "yɛn": ["ㄩㄢ","üan"], "uəi": ["ㄨㄟ","uei"],
+        "iɛn": ["ㄧㄢ","ian"], "ian": ["ㄧㄢ","ian"], "yɛn": ["ㄩㄢ","üan"], "uɛn": ["ㄨㄢ","uan"], "uəi": ["ㄨㄟ","uei"],
         "iəi": ["ㄧㄟ","iei"], "iai": ["ㄧㄞ","iai"], "uai": ["ㄨㄞ","uai"], "uɔn": ["ㄨㄢ","uan"], "uən": ["ㄨㄣ","un"],
         "yəŋ": ["ㄩㄥ","üeng"], "uəŋ": ["ㄨㄥ","ueng"], "uəu": ["ㄨ","u"], "yɛ": ["ㄩㄝ","üe"],
         "uɔ": ["ㄨㄛ","uo"], "iɛ": ["ㄧㄝ","ie"], "uŋ": ["ㄨㄥ","ong"], "yŋ": ["ㄩㄥ","iong"],
