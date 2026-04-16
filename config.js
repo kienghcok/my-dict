@@ -165,7 +165,21 @@ function derivePhonology(status, opts) {
         const pMap = { "ㄍ": "ㄐ", "ㄎ": "ㄑ", "ㄫ": "ㄬ", "ㄏ": "ㄒ" };
         if (pMap[resI]) resI = pMap[resI];
     }
-    if (opts.dropFw) const labials = ["ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄪ"];  if (labials.includes(resI)) { if (resF.length > 1 && resF.startsWith("ㄨ")) { resF = resF.substring(1); } }}
+if (opts.dropFw) { // 這裡的 dropFw 已在 UI 被你標記為「脣音不合」
+    // 定義幫組 (ㄅㄆㄇ) 與 非組 (ㄈㄪ)
+    const labials = ["ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄪ"]; 
+
+    if (labials.includes(resI)) {
+        // 判斷條件：
+        // 1. 韻母必須以 'ㄨ' 開頭
+        // 2. 韻母長度必須大於 1 (代表 ㄨ 是介音，後面還有主元音)
+        if (resF.length > 1 && resF.startsWith("ㄨ")) {
+            // 只移除開頭的介音 ㄨ
+            resF = resF.substring(1);
+        }
+        // 如果 resF 只是 "ㄨ"，長度為 1，則不進入 if，保留主元音
+    }
+}
     if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
     if (opts.simplifyAn) resF = resF.replace("干", "ㄢ");
     if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
