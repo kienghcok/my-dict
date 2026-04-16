@@ -1,52 +1,56 @@
 /**
- * 學生字典音韻推導引擎 (config.js)
+ * 學生字典音韻推導引擎 (IPA 核心演進版 - 全功能整合)
  */
 
+// --- 基礎 IPA 規則配置 ---
 const INITIALS_RULES = {
-    "幫": "ㄅ", "滂": "ㄆ", "明": "ㄇ", "非": "ㄈ", "敷": "ㄈ", "奉": "ㄈ", "微": "ㄪ",
-    "端": "ㄉ", "透": "ㄊ", "泥": "ㄋ", "來": "ㄌ", "日": "ㄖ", "知": "ㄓ", "徹": "ㄔ", "孃": "ㄋ",
-    "精": "ㄗ", "清": "ㄘ", "心": "ㄙ", "邪": "ㄙ", "照": "ㄓ", "穿": "ㄔ", "審": "ㄕ", "禪": "ㄕ",
-    "見": "ㄍ", "谿": "ㄎ", "疑": "ㄫ", "曉": "ㄏ", "匣": "ㄏ", "影": "", "喩": "",
-    "並": (t) => t === "平" ? "ㄆ" : "ㄅ", 
-    "定": (t) => t === "平" ? "ㄊ" : "ㄉ",
-    "澄": (t) => t === "平" ? "ㄔ" : "ㄓ", 
-    "從": (t) => t === "平" ? "ㄘ" : "ㄗ",
-    "羣": (t) => t === "平" ? "ㄎ" : "ㄍ",
-    "牀": (t, mouth) => (mouth === "齊" || mouth === "撮") ? "ㄕ" : "ㄔ"
+    "幫": "p", "滂": "pʰ", "明": "m", "非": "f", "敷": "fʰ", "奉": "f", "微": "ʋ",
+    "端": "t", "透": "tʰ", "泥": "n", "來": "l", "日": "ɹ", "知": "tʃ", "徹": "tʃʰ", "孃": "ɲ",
+    "精": "ts", "清": "tsʰ", "心": "s", "邪": "z", "照": "tʃ", "穿": "tʃʰ", "審": "ʃ", "禪": "ʒ",
+    "見": "k", "谿": "kʰ", "疑": "ŋ", "曉": "x", "匣": "χ", "影": "ʔ",
+    "並": (t) => t === "平" ? "bʱ" : "b", 
+    "定": (t) => t === "平" ? "dʱ" : "d",
+    "澄": (t) => t === "平" ? "dʒʱ" : "dʒ", 
+    "從": (t) => t === "平" ? "dzʱ" : "dz",
+    "羣": (t) => t === "平" ? "gʱ" : "g",
+    "牀": (t, mouth) => (mouth === "齊" || mouth === "撮") ? "ʒ" : "dʒʱ",
+    "喩": (t, mouth) => (mouth === "齊" ? "j" : (mouth === "撮" ? "ɥ" : "w"))
 };
 
 const FINALS_BASE = {
-    "東董送屋": { "合": "ㄨㆲ", "撮": "ㄩㆲ" },
-    "冬腫宋沃": { "合": "ㄨㆲ", "撮": "ㄩㆲ" },
-    "江講絳覺": { "齊": "ㄧㄤ" }, 
-    "支紙寘": { "開": (i) => ("精清從心邪照穿牀審禪".includes(i) ? "ㄭ" : "ㄧ"), "齊": "ㄧ", "合": "ㄨㄟ" },
-    "微尾未": { "齊": "ㄧ", "合": "ㄨㄟ" },
-    "魚語御": { "合": "ㄨ", "撮": "ㄩ" },
-    "虞麌遇": { "合": "ㄨ", "撮": "ㄩ" },
-    "齊薺霽": { "開": "ㄭ", "齊": "ㄧㄟ", "合": "ㄨㄟ" },
-    "泰": { "開": "ㄞ", "合": "ㄨㄟ" },
-    "佳蟹卦": { "開": "ㄞ", "合": "ㄨㄞ", "齊": "ㄧㄞ" },
-    "灰賄隊": { "開": "ㄞ", "合": "ㄨㄟ" },
-    "真軫震質": { "開": "ㄣ", "齊": "ㄧㄣ", "撮": "ㄩㄣ" },
-    "文吻問物": { "開": "ㄣ", "齊": "ㄧㄣ", "撮": "ㄩㄣ", "合": "ㄨㄣ" },
-    "元阮願月": { "開": "ㄣ", "齊": "ㄧㄢ", "撮": "ㄩㄢ", "合": (i) => ("非敷奉微".includes(i) ? "ㄨㄢ" : "ㄨㄣ") },
-    "寒旱翰曷": { "開": "ㄢ", "合": "ㄨ干" },
-    "刪潸諫黠": { "開": "ㄢ", "齊": "ㄧㄢ", "合": "ㄨㄢ" },
-    "先銑霰屑": { "齊": "ㄧ干", "撮": "ㄩ干" },
-    "蕭筱嘯": { "齊": "ㄧㄠ" },
-    "肴巧效": { "齊": "ㄧㄠ" },
-    "豪皓號": { "開": "ㄠ", "齊": "ㄧㄠ" },
-    "歌哿箇": { "開": "ㄛ", "齊": "ㄧㄝ", "合": "ㄨㄛ", "撮": "ㄩㄝ" },
-    "麻馬禡": { "開": "ㄚ", "合": "ㄨㄚ", "齊": (i, tone, mouth, grade) => { return (grade === "二") ? "ㄧㄚ" : "ㄧㄝ";}},
-    "陽養漾藥": { "開": "ㄤ", "齊": "ㄧㄤ", "合": "ㄨㄤ", "撮": "ㄩㄤ" },
-    "庚梗敬陌": { "開": "ㄥ", "齊": "ㄧㄥ", "合": "ㄨㄥ", "撮": "ㄩㄥ" },
-    "青迥徑錫": { "齊": "ㄧㄥ", "撮": "ㄩㄥ" },
-    "蒸職": { "開": "ㄥ", "齊": "ㄧㄥ", "合": "ㄨㄥ" },
-    "尤有宥": { "開": "ㄡ", "齊": "ㄧㄡ", "合": (i) => ("非敷奉微".includes(i) ? "ㄨㄡ" : "ㄡ") },
-    "侵沁緝": { "開": "ㆬ", "齊": "ㄧㆬ" },
-    "覃感勘合": { "開": "ㆰ" },
-    "鹽琰豔葉": { "齊": "ㄧㆰ" },
-    "咸豏陷洽": { "開": "ㆰ", "齊": "ㄧㆰ", "合": "ㄨㆰ" }
+    "東董送屋": { "合": "uŋ", "撮": "yŋ" },
+    "冬腫宋沃": { "合": "uŋ", "撮": "yŋ" },
+    "江講絳覺": { "合": "uɑŋ", "齊": "iɑŋ" }, 
+    "支紙寘": { "開": "ɿ", "齊": "i", "合": "uəi" },
+    "微尾未": { "齊": "i", "合": "uəi" },
+    "魚語御": { "合": "u", "撮": "y" },
+    "虞麌遇": { "合": "u", "撮": "y" },
+    "齊薺霽": { "開": "ɿ", "齊": "iəi", "合": "uəi" },
+    "泰": { "開": "ai", "合": "uəi" },
+    "佳蟹卦": { "開": "ai", "齊": "iai", "合": "uai" },
+    "灰賄隊": { "開": "ai", "合": "uəi" },
+    "真軫震質": { "開": "ən", "齊": "in", "撮": "yn" },
+    "文吻問物": { "開": "ən", "齊": "in", "合": "un", "撮": "yn" },
+    "元阮願月": { "開": "ən", "齊": "iɛn", "撮": "yɛn", "合": (i) => "非敷奉微".includes(i) ? "uan" : "uən" },
+    "寒旱翰曷": { "開": "an", "合": "uɔn" },
+    "刪潸諫黠": { "齊": "ian", "合": "uan", "開": (i) => "見溪曉匣疑影".includes(i) ? "ian" : "an"},
+    "先銑霰屑": { "開": "an", "齊": "iɛn", "合": "uan", "撮": "yɛn" },
+    "蕭筱嘯": { "齊": "iɛu" },
+    "肴巧效": { "開": "au", "齊": "iau" },
+    "豪皓號": { "開": "ɔu" },
+    "歌哿箇": { "開": "ɔ", "齊": "iɛ", "合": "uɔ", "撮": "yɛ" },
+    "麻馬禡": { "開": "a", "合": "ua", "齊": (i, tone, mouth, grade) => (grade === "二") ? "ia" : "iɛ" },
+    "陽養漾藥": { "開": "ɑŋ", "齊": "iɑŋ", "合": "uɔŋ" },
+    "藥": { "開": "ɔŋ", "齊": "iɔŋ", "合": "uɔŋ", "撮": "yɔŋ" },
+    "庚梗敬": { "齊": "iŋ", "合": "uəŋ", "撮": "yəŋ", "開": (i) => "影".includes(i) ? "iŋ" : "əŋ"},
+    "陌": { "開": "əŋ", "齊": "iŋ", "合": "uəŋ", "撮": "yəŋ"},
+    "青迥徑錫": { "齊": "iŋ", "撮": "yəŋ" },
+    "蒸職": { "開": "əŋ", "齊": "iŋ", "合": "uəŋ" },
+    "尤有宥": { "開": "əu", "齊": "iu", "合": (i) => "非敷奉微".includes(i) ? "uəu" : "iu" },
+    "侵寢沁緝": { "開": "əm", "齊": "im" },
+    "覃感勘合": { "開": "am" },
+    "鹽琰豔葉": { "齊": "iɛm" },
+    "咸豏陷洽": { "齊": "iam", "合": "uam" }
 };
 
 const FINALS_RULES = {};
@@ -54,191 +58,195 @@ for (const [chars, rules] of Object.entries(FINALS_BASE)) {
     for (const char of chars) FINALS_RULES[char] = rules;
 }
 
-const MAP = {
-    i: {
-        "ㄅ":["b","b"], "ㄆ":["p","p"], "ㄇ":["m","m"], "ㄈ":["f","f"], "ㄪ":["v","v"],
-        "ㄉ":["d","d"], "ㄊ":["t","t"], "ㄋ":["n","n"], "ㄌ":["l","l"],
-        "ㄍ":["g","g"], "ㄎ":["k","k"], "ㄫ":["ng","ŋ"], "ㄏ":["h","x"],
-        "ㄐ":["j","dʑ"], "ㄑ":["q","tɕ"], "ㄬ":["nj","ȵ"], "ㄒ":["x","ɕ"],
-        "ㄓ":["zh","dʒ"], "ㄔ":["ch","tʃ"], "ㄕ":["sh","ʃ"], "ㄖ":["r","r"],
-        "ㄗ":["z","dz"], "ㄘ":["c","ts"], "ㄙ":["s","s"], "":["",""]
-    },
-    f: {
-        "ㄧ":["i","i"], "ㄨ":["u","u"], "ㄩ":["ü","ü"], "ㄚ":["a","a"], "ㄧㄚ":["ia","ia"], 
-        "ㄨㄚ":["ua","ua"], "ㄛ":["o","ɔ"], "ㄧㄛ":["io","iɔ"], "ㄨㄛ":["uo","uɔ"], 
-        "ㄩㄛ":["üo","yɔ"], "ㄜ":["e","ə"], "ㄨㄜ":["ue","uə"], "ㄝ":["eh","ɛ"], 
-        "ㄧㄝ":["ie","iɛ"], "ㄩㄝ":["üe","yɛ"], "ㄧㆤ":["ie","iɛ"], // 補上ㄧㆤ
-        "ㄞ":["ai","ai"], "ㄧㄞ":["iai","iai"], "ㄨㄞ":["uai","uai"], "ㄟ":["ei","əi"], 
-        "ㄨㄟ":["uei","uəi"], "ㄧㄟ":["iei","iəi"], "ㄠ":["ao","ɑu"], "ㄧㄠ":["iao","iɑu"], "ㄡ":["ou","əu"], 
-        "ㄧㄡ":["iu","iu"], "ㄨㄡ":["uou","uəu"], "ㆰ":["am","am"], "ㄧㆰ":["iam","iam"], 
-        "ㄨㆰ":["uam","uam"], "ㆬ":["em","əm"], "ㄧㆬ":["im","im"], "ㄢ":["an","an"], 
-        "ㄧㄢ":["ian","ian"], "ㄨㄢ":["uan","uan"], "ㄩㄢ":["üan","yan"], "干":["on","ɔn"], "ㄧ干":["ien","iɛn"], 
-        "ㄨ干":["uon","uɔn"], "ㄩ干":["üen","yɛn"], "ㄣ":["en","ən"], "ㄧㄣ":["in","in"], 
-        "ㄨㄣ":["un","un"], "ㄩㄣ":["ün","yn"], "ㄤ":["ang","ɑŋ"], "ㄧㄤ":["iang","iɑŋ"], 
-        "ㄨㄤ":["uang","uɑŋ"], "ㄥ":["eng","əŋ"], "ㄧㄥ":["ing","iŋ"], "ㄨㄥ":["ueng","uəŋ"], 
-        "ㄩㄥ":["üeng","yəŋ"], "ㆲ":["eng","əŋ"], "ㄨㆲ":["ong","uŋ"], "ㄩㆲ":["iong","yŋ"], "ㄦ":["er","ər"], "ㄭ":["i","ɿ"]
-    }
-};
-
-function applyTone(str, toneIdx) {
-    if (toneIdx === undefined || toneIdx === null) return str;
-    // 映射表：0-陰平, 1-去聲, 2-陽平/濁平, 3-上聲, 4-入聲(不帶號)
-    const tones = {
-        "a": ["ā", "á", "ǎ", "à", "a"], "e": ["ē", "é", "ě", "è", "e"],
-        "o": ["ō", "ó", "ǒ", "ò", "o"], "i": ["ī", "í", "ǐ", "ì", "i"],
-        "u": ["ū", "ú", "ǔ", "ù", "u"], "y": ["ǖ", "ǘ", "ǚ", "ǜ", "ü"]
+// --- 核心轉換函數 ---
+function ipaToOthers(ipaStr, toneCode, type) {
+    if (!ipaStr) return "";
+    const initMap = {
+        "tsʰ": ["ㄘ","c"], "tɕʰ": ["ㄑ","q"], "dzʱ": ["ㄘ","c"], "tʃʰ": ["ㄔ","ch"], "dʒʱ": ["ㄔ","ch"], "dz": ["ㄗ","z"], "dʒ": ["ㄓ","zh"],
+        "pʰ": ["ㄆ","p"], "bʱ": ["ㄆ","p"], "tʰ": ["ㄊ","t"], "dʱ": ["ㄊ","t"], "kʰ": ["ㄎ","k"], "gʱ": ["ㄎ","k"],
+        "ts": ["ㄗ","z"], "tɕ": ["ㄐ","j"], "tʃ": ["ㄓ","zh"], "p": ["ㄅ","b"], "b": ["ㄅ","b"], "t": ["ㄉ","d"], "d": ["ㄉ","d"], "k": ["ㄍ","g"], "g": ["ㄍ","g"],
+        "m": ["ㄇ","m"], "f": ["ㄈ","f"], "fʰ": ["ㄈ","f"], "v": ["ㄈ","v"], "ʋ": ["ㄪ","v"], "n": ["ㄋ","n"], "l": ["ㄌ","l"],
+        "s": ["ㄙ","s"], "ɕ": ["ㄒ","x"], "z": ["ㄙ","s"], "ʃ": ["ㄕ","sh"], "ʒ": ["ㄕ","sh"], "x": ["ㄏ","h"], "χ": ["ㄏ","h"], "ŋ": ["ㄫ","ng"],
+        "ɲ": ["ㄬ","ny"], "ɹ": ["ㄖ","r"], "ʔ": ["",""], "j": ["ㄧ","y"], "ɥ": ["ㄩ","yu"], "w": ["ㄨ","w"]
     };
-    const target = str.match(/[aeo]/) || str.match(/[iuy]/);
-    if (!target) return str;
-    const char = target[0];
-    return str.replace(char, tones[char][toneIdx] || char);
+
+    const finalMap = {
+        "uɑŋ": ["ㄨㄤ","uang"], "iɑŋ": ["ㄧㄤ","iang"], "uɔŋ": ["ㄨㄤ","uang"], "yɔŋ": ["ㄩㄤ","iang"],
+        "iɛu": ["ㄧㄠ","iao"], "iau": ["ㄧㄠ","iao"], "iɛm": ["ㄧㄢ","iam"], "iam": ["ㄧㄢ","iam"],
+        "iɛn": ["ㄧㄢ","ian"], "ian": ["ㄧㄢ","ian"], "yɛn": ["ㄩㄢ","üan"], "uəi": ["ㄨㄟ","uei"],
+        "iəi": ["ㄧㄟ","iei"], "iai": ["ㄧㄞ","iai"], "uai": ["ㄨㄞ","uai"], "uɔn": ["ㄨㄢ","uan"], "uən": ["ㄨㄣ","un"],
+        "yəŋ": ["ㄩㄥ","üeng"], "uəŋ": ["ㄨㄥ","ueng"], "uəu": ["ㄨ","u"], "yɛ": ["ㄩㄝ","üe"],
+        "uɔ": ["ㄨㄛ","uo"], "iɛ": ["ㄧㄝ","ie"], "uŋ": ["ㄨㄥ","ong"], "yŋ": ["ㄩㄥ","iong"],
+        "ai": ["ㄞ","ai"], "əi": ["ㄟ","ei"],"au": ["ㄠ","ao"], "ɔu": ["ㄠ","ao"], "an": ["ㄢ","an"], "ən": ["ㄣ","en"],
+        "ɑŋ": ["ㄤ","ang"], "əŋ": ["ㄥ","eng"], "am": ["ㄢ","am"], "əm": ["ㄣ","em"], "əu": ["ㄡ","ou"],
+        "ia": ["ㄧㄚ","ia"], "ua": ["ㄨㄚ","ua"], "iŋ": ["ㄧㄥ","ing"], "in": ["ㄧㄣ","in"], "yn": ["ㄩㄣ","ün"],
+        "im": ["ㄧㄣ","im"], "iu": ["ㄧㄡ","iu"], "i": ["ㄧ","i"], "u": ["ㄨ","u"], "y": ["ㄩ","ü"],
+        "a": ["ㄚ","a"], "ɔ": ["ㄛ","o"], "ɛ": ["ㄝ","eh"], "ə": ["ㄜ","e"], "ɿ": ["","ih"],"ʅ": ["","ih"],
+        "aʔ": ["ㄚ","a"], "ɔʔ": ["ㄛ","o"], "iɛʔ": ["ㄧㄝ","ie"], "iaʔ": ["ㄧㄚ","ia"], "əʔ": ["ㄜ","e"], "ɿʔ": ["ㄭ","i"], "iɔʔ": ["ㄧㄛ","io"], "uɔʔ": ["ㄨㄛ","uo"], "yɔʔ": ["ㄩㄛ","üo"], "uəʔ": ["ㄨㄜ","ue"]
+    };
+
+    const idx = (type === "zhuyin") ? 0 : 1;
+    let resInit = "", resFinal = ipaStr;
+    const sortedInits = Object.keys(initMap).sort((a, b) => b.length - a.length);
+    for (let k of sortedInits) {
+        if (ipaStr.startsWith(k)) {
+            resInit = initMap[k][idx];
+            resFinal = ipaStr.substring(k.length);
+            break;
+        }
+    }
+
+    let finalOut = finalMap[resFinal] ? finalMap[resFinal][idx] : resFinal;
+    if (type === "zhuyin") {
+        const marks = { "44":"", "22":"ˊ", "53":"ˇ", "31":"ˇ", "35":"ˋ", "13":"ˋ" };
+        if (resFinal === "ɿ") finalOut = "";
+        return resInit + finalOut + (marks[toneCode] || "");
+    } else {
+        const toneIdx = { "44":0, "22":1, "53":2, "31":2, "35":3, "13":3 }[toneCode];
+        return applyPinyinTone(resInit + finalOut, toneIdx);
+    }
 }
 
+function applyPinyinTone(str, toneIdx) {
+    if (toneIdx === undefined) return str;
+    const tones = { 'a':['ā','á','ǎ','à'], 'e':['ē','é','ě','è'], 'i':['ī','í','ǐ','ì'], 'o':['ō','ó','ǒ','ò'], 'u':['ū','ú','ǔ','ù'], 'ü':['ǖ','ǘ','ǚ','ǜ'] };
+    const priority = ['a', 'e', 'o', 'i', 'u', 'ü'];
+    for (let char of priority) {
+        if (str.includes(char)) return str.replace(char, tones[char][toneIdx]);
+    }
+    return str;
+}
+
+// --- 主推導引擎 ---
 function derivePhonology(status, opts) {
     const m = status.match(/^([一-龥])(開|合|齊|撮)?([一二三四])?([一-龥])([平上去入])$/);
     if (!m) return status;
-
     let [_, init, mouth="開", grade, rime, tone] = m;
-    
-    let resI = (typeof INITIALS_RULES[init] === "function") 
-        ? INITIALS_RULES[init](tone, mouth) 
-        : INITIALS_RULES[init];
-    
+
+    let resI = (typeof INITIALS_RULES[init] === "function") ? INITIALS_RULES[init](tone, mouth) : INITIALS_RULES[init];
     let resF = "";
     const rules = FINALS_RULES[rime];
     if (rules) {
         const key = mouth + (grade || "");
         resF = rules[key] || rules[mouth] || "";
-        if (typeof resF === "function") resF = resF(init, tone, mouth, grade);
+        if (typeof resF === "function") resF = resF(init, tone, mouth, grade, rime);
     }
 
-    // --- 演變邏輯 ---
+// --- 演變邏輯 (修正版) ---
 
-    // 1. 東庚合併功能
-    if (opts.mergeDongGeng) {
-        const voiceless = "幫滂端透精清心照穿審見谿曉影";
-        if ("庚梗敬陌".includes(rime)) {
-            if (mouth === "合") resF = "ㄨㆲ";
-            else if (mouth === "撮") resF = voiceless.includes(init) ? "ㄧㄥ" : "ㄩㆲ";
-        } else if (rime === "蒸" && mouth === "合") {
-            resF = "ㄨㆲ";
-        } else if (rime === "職") {
-            if (mouth === "合") resF = "ㄨㄤ";
-            else if (mouth === "撮") resF = "ㄩㆲ";
+    // 1. 物理轉換：陽聲韻轉入聲 (物理屬性，最先執行)
+    if (tone === "入") {
+        resF = resF.replace(/m$/, "p").replace(/n$/, "t").replace(/ŋ$/, "k");
+    }
+
+// 2. 演變功能：輕唇不合
+    if (opts.dropFw && /^[ppʰbmfv]/.test(resI)) {if (/^u[aə]/.test(resF)) { resF = resF.substring(1); } 
+        else if (resF === "uŋ") resF = "əŋ"; else if (resF === "un") resF = "ən";
         }
+
+    // 3. 演變功能：咸入山 (修正：確保在合併前執行)
+    if (opts.mergeHamShan) {
+        resF = resF.replace(/am$/, "an").replace(/im$/, "in").replace(/ap$/, "at").replace(/ip$/, "it");
     }
 
-    // 2. 齊韻歸一
-    if (opts.qiToI && resF === "ㄧㄟ") resF = "ㄧ";
+    // 4. 演變功能：簡化山攝 (新增功能塊)
+if (opts.simplifyShan) {
+    // 將 uɔn 併入 uan
+    if (resF === "uɔn") resF = "uan";
+}
 
-    // 3. 莊三化二
-    if (opts.zhuangSan && ["ㄓ", "ㄔ", "ㄕ", "ㄖ"].includes(resI)) {
-        if (resF.startsWith("ㄧ")) {
-            resF = resF.replace(/^ㄧ/, ""); 
-            if (resF === "") resF = "ㄭ"; 
-        } else if (resF.startsWith("ㄩ")) {
-            resF = resF.replace(/^ㄩ/, "ㄨ"); 
-        }
-    }
-
-    // 4. 入聲韻合併功能
-    if (opts.mergeRuRime && tone === "入") {
-        const ruMap = {
-            "ㆰ":"ㄚ", "ㄢ":"ㄚ", "干":"ㄚ", "ㄨㆰ":"ㄚ", "ㄨㄢ":"ㄚ",
-            "ㆬ":"ㄜ", "ㄣ":"ㄜ", "ㄥ":"ㄜ",
-            "ㄧㆬ":"ㄧ", "ㄧㄣ":"ㄧ", "ㄧㄥ":"ㄧ",
-            "ㄨㄣ":"ㄨ", "ㄨㆲ":"ㄨ",
-            "ㄩㄣ":"ㄩ", "ㄩㆲ":"ㄩ",
-            "ㄨㄥ":"ㄨㄜ", "ㄤ":"ㄛ", "ㄧㄤ":"ㄧㄛ", "ㄩㄤ":"ㄩㄛ","ㄨㄤ":"ㄨㄛ",
-            "ㄧㆰ":"ㄧㆤ", "ㄧㄢ":"ㄧㆤ", "ㄧ干":"ㄧㆤ"
+// 5. 演變功能：莊三化二
+    // 修正：將 [] 改為 ()，確保只匹配完整的庄組聲母 (tʃ, dʒ, ʃ, ʒ, ɹ)
+    // 這樣就不會誤傷端組 (t, d) 或 精組 (ts)
+    if (opts.zhuangSan && /^(tʃ|dʒ|ʃ|ʒ|ɹ)/.test(resI)) {
+        const zsMap = { 
+            "i": "ʅ", "in": "ən", "im": "əm", 
+            "ip": opts.mergeRuRime ? "ʅp" : "əp",
+            "iŋ": "əŋ", "ik": "ək"
         };
-        const oldRuF = resF;
-        if (ruMap[resF]) resF = ruMap[resF];
-        if (["ㄓ", "ㄔ", "ㄕ", "ㄖ"].includes(resI) && ["ㄣ", "ㆬ", "ㄥ"].includes(oldRuF)) {
-            resF = "ㄭ";
+        
+        if (zsMap[resF]) {
+            resF = zsMap[resF];
+        } else if (resF.startsWith("iɛ")) {
+            resF = resF.replace(/^iɛ/, "a"); // iɛn -> an
+        } else if (resF.length > 1 && resF.startsWith("i")) {
+            resF = resF.replace(/^i/, "");   // iɑŋ -> ɑŋ
+        } else if (resF.startsWith("y")) {
+            resF = resF.replace(/^y/, "u");   // yŋ -> uŋ
         }
     }
 
-    // 基礎演變 (其餘選項)
-    if (opts.dropVng && (resI === "ㄪ" || resI === "ㄫ")) resI = "";
-    if (opts.palatalization && (mouth === "齊" || mouth === "撮")) {
-        const pMap = { "ㄍ": "ㄐ", "ㄎ": "ㄑ", "ㄫ": "ㄬ", "ㄏ": "ㄒ" };
+    // 6. 演變功能：見系顎化
+    if (opts.palatalization && /^[iyjɥ]/.test(resF)) {
+        const pMap = { "k":"tɕ", "kʰ":"tɕʰ", "g":"tɕ", "gʱ":"tɕʰ", "x":"ɕ", "χ":"ɕ" };
         if (pMap[resI]) resI = pMap[resI];
     }
-    if (opts.dropFw) { 
-        const labials = ["ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄪ"]; 
-        if (labials.includes(resI)) {
-            if (resF.length > 1 && resF.startsWith("ㄨ")) {
-                resF = resF.substring(1);
-            }
+
+    // 7. 演變功能：東庚合併 (修正「國」字問題)
+    if (opts.mergeDongGeng) {
+        const voicelessList = "幫滂端透精清心照穿審見谿曉影";
+        if ("庚梗敬陌".includes(rime)) {
+            if (mouth === "合") resF = (tone === "入") ? "uk" : "uŋ"; // 修正入聲結尾
+            else if (mouth === "撮") resF = voicelessList.includes(init) ? "iŋ" : "yŋ";
+        } else if (rime === "蒸" && mouth === "合") {
+            resF = (tone === "入") ? "uk" : "uŋ";
+        } else if (rime === "職") {
+            if (mouth === "合") resF = (tone === "入") ? "uɔk" : "uɔŋ"; // 國字所在韻
+            else if (mouth === "撮") resF = (tone === "入") ? "yk" : "yŋ";
         }
     }
-    if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
+
+    // 8. 演變功能：日母兒化
+    if (opts.riToEr && resI === "ɹ" && resF === "i") { resI = ""; resF = "ər"; }
+
+    // 9. 演變功能：疑微脫落
+    if (opts.dropVng && (resI === "ŋ" || resI === "ʋ")) resI = "";
+
+    // 10 演變功能：齊韻歸一
+    if (opts.qiToI && resF === "iəi") resF = "i";
+
+    // 11. 入聲喉塞音化 (最後一步：將所有入聲結尾 p/t/k 轉為 ʔ)
+    if (tone === "入" && opts.mergeRuRime) {
+        resF = resF.replace(/[ptk]$/, "ʔ");
+    }
+
+// --- 聲調處理與動態合併邏輯 (修正版) ---
+    const voiceless = "幫滂端透精清心照穿審見谿曉影";
+    const quanZhuo = "並定澄從羣牀邪禪匣奉"; // 明確定義全濁聲母
+    const isVoiceless = voiceless.includes(init);
+    const isQuanZhuo = quanZhuo.includes(init);
+
+    // 1. 確定基礎原始八調標籤
+    let toneKey = (isVoiceless ? "陰" : "陽") + tone;
+
+    // 2. 鏈式合併邏輯
+    const tMode = opts.toneMode || "8";
     
-    // 山攝/咸攝簡化 (注音層面)
-    if (opts.simplifyAn) { resF = resF.replace("干", "ㄢ"); }
-    if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
-
-    // 聲調計算
-    const fullV = ["並","奉","定","澄","從","牀","羣","邪","禪","匣"];
-    const sonorant = ["明","微","泥","來","日","孃","疑","喩"];
-    let toneKey = tone;
-    if (tone === "上" && fullV.includes(init)) toneKey = "去";
-    else if (tone === "平") toneKey = (fullV.includes(init) || sonorant.includes(init)) ? "濁平" : "清平";
-
-    // 輸出處理 - 注音
-    if (opts.phoneticScheme === "zhuyin") {
-        const marks = opts.beijingTone 
-            ? { "清平":"", "濁平":"ˊ", "上":"ˇ", "去":"ˋ", "入":"˙" }
-            : { "清平":"", "濁平":"ˇ", "上":"ˋ", "去":"ˊ", "入":"˙" };
-        const displayF = (resF === "ㄭ") ? "" : resF;
-        return `${resI}${displayF}${marks[toneKey] || ""}`;
-    }
-
-    // --- 關鍵步驟：獲取基礎 IPA/羅馬 字符串 ---
-    const idx = opts.phoneticScheme === "roma" ? 0 : 1;
-    let fStr = (MAP.f[resF] ? MAP.f[resF][idx] : resF) || "";
-    let iStr = (MAP.i[resI] ? MAP.i[resI][idx] : resI) || "";
-
-    // 強制轉換入聲韻尾 (-p, -t, -k)
-    if (tone === "入") {
-        fStr = fStr.replace(/m$/, "p").replace(/n$/, "t").replace(/ng$/, "k").replace(/ŋ$/, "k");
-    }
-
-    // 3. 輸出處理 - 羅馬拼音
-    if (opts.phoneticScheme === "roma") {
-        if (["z","c","s","zh","ch","sh","r"].includes(iStr)) {
-            if (resF === "ㄭ") fStr = "i";
-            else if (resF === "ㄧ") fStr = "ii";
+    // 七調模式：全濁上歸陽去 (13)，次濁上依舊是陽上 (31)
+    if (tMode === "7" || tMode === "6" || tMode === "5") {
+        if (toneKey === "陽上" && isQuanZhuo) {
+            toneKey = "陽去"; // 關鍵修正：全濁上 -> 13
         }
-        
-        const tIdx = opts.beijingTone 
-            ? { "清平":0, "濁平":1, "上":2, "去":3, "入":4 }[toneKey]
-            : { "清平":0, "濁平":2, "上":3, "去":1, "入":4 }[toneKey];
-            
-        return `${iStr}${applyTone(fStr, tIdx)}`;
+        // 注意：此時次濁上仍維持 "陽上"，標籤不變，最終映射為 31
     }
 
-    // 4. 輸出處理 - IPA
-    if (opts.phoneticScheme === "ipa") {
-        // 處理空韻與特殊聲母組合
-        if (resF === "ㄭ") {
-            if (resI === "ㄖ") { iStr = "r"; fStr = ""; }
-            else if (["ㄓ", "ㄔ", "ㄕ"].includes(resI)) fStr = "ʅ";
-            else if (["ㄗ", "ㄘ", "ㄙ"].includes(resI)) fStr = "ɿ";
-        }
-
-        // --- 修正：simplifyAn 對 IPA 的影響 ---
-        if (opts.simplifyAn) {
-            // 此時 fStr 已從 MAP 取得，例如 "ian"
-            if (fStr === "ian") fStr = "iɛn";
-            if (fStr === "üan" || fStr === "yan") fStr = "yɛn";
-        }
-
-        const ipaT = opts.beijingTone
-            ? { "清平":"˥˥", "濁平":"˧˥", "上":"˨˩˦", "去":"˥˩", "入":"˥" }
-            : { "清平":"˦˦", "濁平":"˨˩", "上":"˦˨", "去":"˨˦", "入":"˩˧" };
-            
-        return `${iStr}${fStr}${ipaT[toneKey] || ""}`;
+    if (tMode === "6" || tMode === "5") {
+        // 六調模式：陰陽去合併 (通常陽去併入陰去 35)
+        if (toneKey === "陽去") toneKey = "陰去";
     }
+
+    if (tMode === "5") {
+        // 五調模式：陰陽入合併
+        if (toneKey === "陽入") toneKey = "陰入";
+    }
+
+    // 3. 映射最終調值
+    const toneValueMap = {
+        "陰平": "44", "陽平": "22", "陰上": "53", "陽上": "31",
+        "陰去": "35", "陽去": "13", "陰入": "44", "陽入": "22"
+    };
+    const toneCode = toneValueMap[toneKey];
+
+    if (opts.phoneticScheme === "ipa") return resI + resF + toneCode;
+    return ipaToOthers(resI + resF, toneCode, opts.phoneticScheme);
 }
