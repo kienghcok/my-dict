@@ -165,13 +165,13 @@ function derivePhonology(status, opts) {
         const pMap = { "ㄍ": "ㄐ", "ㄎ": "ㄑ", "ㄫ": "ㄬ", "ㄏ": "ㄒ" };
         if (pMap[resI]) resI = pMap[resI];
     }
-    if (opts.dropFw && (resI === "ㄈ" || resI === "ㄪ")) resF = resF.replace(/^ㄨ/, "");
+    if (opts.dropFw && ["ㄈ", "ㄈˇ", "ㄈˋ", "ㄇ"].includes(resI)) { if (resF !== "ㄨ" && resF.startsWith("ㄨ")) { resF = resF.substring(1); } }
     if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
     if (opts.simplifyAn) resF = resF.replace("干", "ㄢ");
     if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
 
     // 聲調計算
-    const fullV = ["並","定","澄","從","牀","羣","邪","禪","匣"];
+    const fullV = ["並","奉","定","澄","從","牀","羣","邪","禪","匣"];
     const sonorant = ["明","微","泥","來","日","孃","疑","喩"];
     let toneKey = tone;
     if (tone === "上" && fullV.includes(init)) toneKey = "去";
