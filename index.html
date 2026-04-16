@@ -147,48 +147,62 @@ function doSearch() {
     const fragment = document.createDocumentFragment();
     let found = false;
 
-    [...inputChar].forEach(key => {
-        const items = DICT_DATA[key];
-        if (items) {
-            found = true;
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'result-item';
-
-                let tags = [];
-                if (item.陸 && item.陸 !== '/' && item.陸 !== 'None') tags.push(`<span class="tag-item"><b style="color:#2980b9">【陸】</b>${item.陸}</span>`);
-                if (item.臺 && item.臺 !== '/' && item.臺 !== 'None') tags.push(`<span class="tag-item"><b style="color:#27ae60">【臺】</b>${item.臺}</span>`);
-                if (item.異 && item.異 !== '/' && item.異 !== 'None') tags.push(`<span class="tag-item"><b style="color:#e67e22">【異】</b>${item.異}</span>`);
-                const tagsHtml = tags.length ? `<div class="variant-tags">${tags.join(' ')}</div>` : '';
-
-                let html = `<div class="char-head">${key} ${tagsHtml}</div>`;
-
-                const process = (status) => {
-                    if (!status || status === '/') return null;
-                    if (status.includes('|')) return status.split('|').map(s => process(s)).join(' | ');
-                    let cleanStatus = status.replace(/（[^）]+）/g, '').replace(/\([^)]+\)/g, '').trim();
-                    return (typeof derivePhonology === 'function') ? derivePhonology(cleanStatus, opts) : status;
-                };
-
-                if (mode === 'orig') {
-                    html += `<div class="reading-box"><span class="label-tag">【讀音】</span><span class="bopomofo">${item.orig || '/'}</span></div>`;
-                } else if (mode === 'status') {
-                    html += `<div class="reading-box"><span class="label-tag">【地位】</span><span class="bopomofo">${item.status || '/'}</span></div>`;
-                    if (item.var && item.var !== '/') {
-                        html += `<div class="reading-box"><span class="label-tag">【異地位】</span><span class="bopomofo">${item.var}</span></div>`;
-                    }
-                } else {
-                    const main = process(item.status);
-                    if (main) html += `<div class="reading-box"><span class="label-tag">【讀音】</span><span class="bopomofo">${main}</span></div>`;
-                    const v = process(item.var);
-                    if (v) html += `<div class="reading-box"><span class="label-tag">【異讀】</span><span class="bopomofo">${v}</span></div>`;
-                }
-
-                html += `<div class="mean-text">${item.mean || '暫無釋義'}</div>`;
-                div.innerHTML = html;
-                fragment.appendChild(div);
-            });
+    // 將輸入的字串拆解成單個字進行處理
+    [...inputChar].forEach(rawKey => {
+        // --- 新增：利用 VARIANT_MAP 進行轉換 ---
+        let keysToSearch = [rawKey]; // 默認搜索原字
+        
+        // 如果在對照表裡找到了對應的繁體字或正體字，就把目標加入搜索列表
+        if (typeof VARIANT_MAP !== 'undefined' && VARIANT_MAP[rawKey]) {
+            // VARIANT_MAP[rawKey] 是一個數組，例如 ["島"] 或 ["並", "併"]
+            keysToSearch = keysToSearch.concat(VARIANT_MAP[rawKey]);
         }
+
+        // 遍歷所有可能的字頭（原字 + 對照表中的字）
+        // 使用 Set 確保去重，避免同一個字搜兩次
+        [...new Set(keysToSearch)].forEach(key => {
+            const items = DICT_DATA[key];
+            if (items) {
+                found = true;
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+
+                    let tags = [];
+                    if (item.陸 && item.陸 !== '/' && item.陸 !== 'None') tags.push(`<span class="tag-item"><b style="color:#2980b9">【陸】</b>${item.陸}</span>`);
+                    if (item.臺 && item.臺 !== '/' && item.臺 !== 'None') tags.push(`<span class="tag-item"><b style="color:#27ae60">【臺】</b>${item.臺}</span>`);
+                    if (item.異 && item.異 !== '/' && item.異 !== 'None') tags.push(`<span class="tag-item"><b style="color:#e67e22">【異】</b>${item.異}</span>`);
+                    const tagsHtml = tags.length ? `<div class="variant-tags">${tags.join(' ')}</div>` : '';
+
+                    let html = `<div class="char-head">${key} ${tagsHtml}</div>`;
+
+                    const process = (status) => {
+                        if (!status || status === '/') return null;
+                        if (status.includes('|')) return status.split('|').map(s => process(s)).join(' | ');
+                        let cleanStatus = status.replace(/（[^）]+）/g, '').replace(/\([^)]+\)/g, '').trim();
+                        return (typeof derivePhonology === 'function') ? derivePhonology(cleanStatus, opts) : status;
+                    };
+
+                    if (mode === 'orig') {
+                        html += `<div class="reading-box"><span class="label-tag">【讀音】</span><span class="bopomofo">${item.orig || '/'}</span></div>`;
+                    } else if (mode === 'status') {
+                        html += `<div class="reading-box"><span class="label-tag">【地位】</span><span class="bopomofo">${item.status || '/'}</span></div>`;
+                        if (item.var && item.var !== '/') {
+                            html += `<div class="reading-box"><span class="label-tag">【異地位】</span><span class="bopomofo">${item.var}</span></div>`;
+                        }
+                    } else {
+                        const main = process(item.status);
+                        if (main) html += `<div class="reading-box"><span class="label-tag">【讀音】</span><span class="bopomofo">${main}</span></div>`;
+                        const v = process(item.var);
+                        if (v) html += `<div class="reading-box"><span class="label-tag">【異讀】</span><span class="bopomofo">${v}</span></div>`;
+                    }
+
+                    html += `<div class="mean-text">${item.mean || '暫無釋義'}</div>`;
+                    div.innerHTML = html;
+                    fragment.appendChild(div);
+                });
+            }
+        });
     });
 
     if (!found) {
@@ -197,7 +211,6 @@ function doSearch() {
         resultContainer.appendChild(fragment);
     }
 }
-
 // 頁面加載時自動讀取存檔
 window.onload = () => {
     const saved = JSON.parse(localStorage.getItem('phon_cfg') || '{}');
