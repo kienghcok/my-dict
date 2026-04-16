@@ -39,7 +39,8 @@
         <button class="btn-settings" onclick="toggleMenu(event)">⚙️</button>
         <div id="dropdownMenu" class="dropdown-menu">
             <div style="padding:10px; cursor:pointer;" onclick="openSettings()">推導設置</div>
-            <div style="padding:10px; border-top:1px solid #eee; color:#c0392b; cursor:pointer;" onclick="location.reload()">重新整理</div>
+            <div style="padding:10px; border-top:1px solid #eee; color:#c0392b; cursor:pointer;" onclick="clearHistoryAndReload()">重置所有設置</div>
+            <div style="padding:10px; border-top:1px solid #eee; cursor:pointer;" onclick="location.reload()">重新整理</div>
         </div>
     </div>
 </div>
@@ -103,6 +104,7 @@
 <script src="config.js"></script>
 
 <script>
+// --- UI 控制 ---
 function toggleMenu(e) { 
     e.stopPropagation(); 
     const m = document.getElementById('dropdownMenu'); 
@@ -113,20 +115,37 @@ function openSettings() { document.getElementById('modalOverlay').style.display=
 function closeSettings() { document.getElementById('modalOverlay').style.display='none'; }
 
 function updateUI() {
-    const mode = document.querySelector('input[name="displayMode"]:checked').value;
+    const modeEl = document.querySelector('input[name="displayMode"]:checked');
+    const mode = modeEl ? modeEl.value : 'bopomofo';
     const derivationOptions = document.getElementById('derivationOptions');
+    // 只有「推導拼讀」顯示子選項
     derivationOptions.style.display = (mode === 'bopomofo') ? 'block' : 'none';
+}
+
+function clearHistoryAndReload() {
+    if(confirm("確定要重置所有推導設置為推薦默認值嗎？")) {
+        localStorage.removeItem('phon_cfg');
+        location.reload();
+    }
 }
 
 window.onclick = () => { document.getElementById('dropdownMenu').style.display='none'; }
 
+// --- 核心邏輯 ---
 function getActiveOptions() {
     const opts = {};
+    // 獲取勾選框
     document.querySelectorAll('.opt').forEach(el => opts[el.dataset.key] = el.checked);
-    opts.displayMode = document.querySelector('input[name="displayMode"]:checked').value;
-    opts.phoneticScheme = document.querySelector('input[name="phoneticScheme"]:checked').value;
+    // 獲取顯示方案
+    const modeEl = document.querySelector('input[name="displayMode"]:checked');
+    opts.displayMode = modeEl ? modeEl.value : 'bopomofo';
+    // 獲取拼音方案
+    const schemeEl = document.querySelector('input[name="phoneticScheme"]:checked');
+    opts.phoneticScheme = schemeEl ? schemeEl.value : 'roma';
+    // 獲取聲調模式
     const toneEl = document.querySelector('input[name="toneMode"]:checked');
     opts.toneMode = toneEl ? toneEl.value : "5";
+    
     return opts;
 }
 
@@ -198,30 +217,27 @@ function doSearch() {
     }
 }
 
-// 頁面加載時自動讀取存檔
+// 頁面加載初始化
 window.onload = () => {
     const saved = JSON.parse(localStorage.getItem('phon_cfg') || '{}');
     
-    // 如果有存檔則讀取，否則保持 HTML 中的默認 checked 狀態
+    // 如果有舊紀錄，恢復舊紀錄；否則會保持 HTML 裡的 checked 狀態
     if (saved.displayMode) {
-        const radio = document.querySelector(`input[name="displayMode"][value="${saved.displayMode}"]`);
-        if (radio) radio.checked = true;
+        const el = document.querySelector(`input[name="displayMode"][value="${saved.displayMode}"]`);
+        if (el) el.checked = true;
     }
     if (saved.phoneticScheme) {
-        const radio = document.querySelector(`input[name="phoneticScheme"][value="${saved.phoneticScheme}"]`);
-        if (radio) radio.checked = true;
+        const el = document.querySelector(`input[name="phoneticScheme"][value="${saved.phoneticScheme}"]`);
+        if (el) el.checked = true;
     }
     if (saved.toneMode) {
-        const radio = document.querySelector(`input[name="toneMode"][value="${saved.toneMode}"]`);
-        if (radio) radio.checked = true;
+        const el = document.querySelector(`input[name="toneMode"][value="${saved.toneMode}"]`);
+        if (el) el.checked = true;
     }
     
-    // 恢復所有勾選框 (若存檔中存在則覆蓋默認)
     document.querySelectorAll('.opt').forEach(el => {
         const key = el.dataset.key;
-        if (saved.hasOwnProperty(key)) {
-            el.checked = saved[key];
-        }
+        if (saved.hasOwnProperty(key)) el.checked = saved[key];
     });
 
     updateUI();
