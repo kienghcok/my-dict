@@ -124,6 +124,7 @@ function getActiveOptions() {
     document.querySelectorAll('.opt').forEach(el => opts[el.dataset.key] = el.checked);
     opts.displayMode = document.querySelector('input[name="displayMode"]:checked').value;
     opts.phoneticScheme = document.querySelector('input[name="phoneticScheme"]:checked').value;
+    opts.beijingTone = document.getElementById('beijingTone').checked;
     return opts;
 }
 
