@@ -72,7 +72,7 @@ const MAP = {
         "ㄨㄟ":["uei","uəi"], "ㄧㄟ":["iei","iəi"], "ㄠ":["ao","ɑu"], "ㄧㄠ":["iao","iɑu"], "ㄡ":["ou","əu"], 
         "ㄧㄡ":["iu","iu"], "ㄨㄡ":["uou","uəu"], "ㆰ":["am","am"], "ㄧㆰ":["iam","iam"], 
         "ㄨㆰ":["uam","uam"], "ㆬ":["em","əm"], "ㄧㆬ":["im","im"], "ㄢ":["an","an"], 
-        "ㄧㄢ":["ian","ian"], "ㄨㄢ":["uan","uan"], "干":["on","ɔn"], "ㄧ干":["ien","iɛn"], 
+        "ㄧㄢ":["ian","ian"], "ㄨㄢ":["uan","uan"], "ㄩㄢ":["üan","yan"], "干":["on","ɔn"], "ㄧ干":["ien","iɛn"], 
         "ㄨ干":["uon","uɔn"], "ㄩ干":["üen","yɛn"], "ㄣ":["en","ən"], "ㄧㄣ":["in","in"], 
         "ㄨㄣ":["un","un"], "ㄩㄣ":["ün","yn"], "ㄤ":["ang","ɑŋ"], "ㄧㄤ":["iang","iɑŋ"], 
         "ㄨㄤ":["uang","uɑŋ"], "ㄥ":["eng","əŋ"], "ㄧㄥ":["ing","iŋ"], "ㄨㄥ":["ueng","uəŋ"], 
@@ -173,7 +173,19 @@ function derivePhonology(status, opts) {
         }
     }
     if (opts.riToEr && resI === "ㄖ" && resF === "ㄧ") { resI = ""; resF = "ㄦ"; }
-    if (opts.simplifyAn) resF = resF.replace("干", "ㄢ");
+    if (opts.simplifyAn && opts.phoneticScheme === "ipa") {
+    // 將 ian 替換為 iɛn
+    if (ipaOutput.includes("ian")) {
+        ipaOutput = ipaOutput.replace("ian", "iɛn");
+    }
+    // 將 üan 或 yan 替換為 yɛn (取決於你 IPA 裡是用 ü 還是 y)
+    if (ipaOutput.includes("üan")) {
+        ipaOutput = ipaOutput.replace("üan", "yɛn");
+    }
+    if (ipaOutput.includes("yan")) {
+        ipaOutput = ipaOutput.replace("yan", "yɛn");
+    }
+}
     if (opts.simplifyAm) { resF = resF.replace("ㆬ", "ㄣ").replace("ㆰ", "ㄢ"); }
 
     // 聲調計算
